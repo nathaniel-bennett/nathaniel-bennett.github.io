@@ -42,9 +42,12 @@ h1, h2, h3, h4, h5, h6,
 p, blockquote, pre,
 ul, ol, dl, figure,
 %vertical-rhythm {
-  margin-bottom: #{$spacing-unit / 2};
+  margin-bottom: #{calc($spacing-unit / 2)};
 }
 
+hr {
+  margin-bottom: 24px;
+}
 
 
 /**
@@ -123,12 +126,22 @@ a {
 }
 
 /**
+ * Video
+ */
+video {
+  width: 90%;
+  padding-left: 5%;
+  padding-right: 5%;
+  margin-bottom: 14px;
+}
+
+/**
  * Blockquotes
  */
 blockquote {
   color: $grey-color;
   border-left: 4px solid $grey-color-light;
-  padding-left: #{$spacing-unit / 2};
+  padding-left: #{calc($spacing-unit / 2)};
   @include relative-font-size(1.125);
   letter-spacing: -1px;
   font-style: italic;
@@ -209,7 +222,9 @@ pre {
 table {
   display: block;
   margin-bottom: $spacing-unit;
-  width: 100%;
+  width: fit-content; // used to be 100%; changed to enable centering of tables
+  margin-left: auto; // New--enable centering of tables
+  margin-right: auto; // New--enable centering of tables
   text-align: $table-text-align;
   color: lighten($text-color, 5%);
   border-collapse: collapse;
@@ -222,7 +237,7 @@ table {
   }
 
   th, td {
-    padding: #{$spacing-unit / 3} #{$spacing-unit / 2};
+    padding: #{calc($spacing-unit / 3)} #{calc($spacing-unit / 2)};
   }
 
   th {

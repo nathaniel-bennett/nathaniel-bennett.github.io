@@ -11,7 +11,7 @@ html {
   &[data-scroll-status='top'] {
     header.site-header-transparent {
       height: 0;
-      margin-top: 12px;
+//      margin-top: 12px;
       background-color: transparent;
       transition: 0.1s height,background-color,box-shadow;
 
@@ -46,6 +46,27 @@ html {
   }
 
   &[data-scroll-status='down'] {
+    header.site-header {
+      top: -$header-height;
+    }
+
+    .framework .sidebar {
+      top: 20px;
+    }
+  }
+
+  // Remove this and [data-scroll-status='up'] attribute to restore semi-persistent top bar
+  &[data-scroll-status='bottom'] {
+    header.site-header {
+      top: -$header-height;
+    }
+
+    .framework .sidebar {
+      top: 20px;
+    }
+  }
+
+  &[data-scroll-status='up'] {
     header.site-header {
       top: -$header-height;
     }
@@ -96,7 +117,7 @@ html {
   margin-right: 50px;
 
   .site-brand-inner {
-    @include relative-font-size(1.125);
+    @include relative-font-size(2.25); // Was 1.125
     font-weight: $base-font-weight;
     letter-spacing: -1px;
     transition: 0.1s filter color;
@@ -105,9 +126,9 @@ html {
       color: $header-text-color;
     }
 
-    .site-favicon {
+    .site-icon {
       display: inline-block;
-      height: #{$header-height / 1.5};
+      height: #{calc($header-height / 1.5)};
       margin-right: 5px;
     }
   }
@@ -695,7 +716,7 @@ html {
   }
 
   @include media-query($on-palm) {
-    height: #{$banner-height / 1.5};
+    height: #{calc($banner-height / 1.5)};
   }
 }
 
