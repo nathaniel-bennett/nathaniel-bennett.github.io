@@ -13,7 +13,7 @@ subheading: "Ph.D. Research Assistant | Protocol Hacker | Rust Developer"
 
 Hi, I'm Nathaniel Bennett!
 
-I'm a 2nd-year Ph.D. student working in the Florida Institute for Cybersecurity (FICS) at the University of Florida.
+I'm a 3rd-year Ph.D. student working in the Florida Institute for Cybersecurity (FICS) at the University of Florida.
 I work with and am co-advised by [Patrick Traynor](https://www.cise.ufl.edu/~traynor/) and [Kevin Butler](https://www.cise.ufl.edu/~butler/).
 My research focuses on cellular systems security and network protocol fuzzing, along with the occasional foray into other areas of security and privacy.
 
