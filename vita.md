@@ -5,4 +5,4 @@ banner: "/assets/images/banners/code-blurred-banner-short2.jpeg"
 heading: "Curriculum Vitae"
 ---
 
-Available upon request: me[at]nathanielbennett[dot]com
+Available upon request: me[at]nathanielbennett[dotcom]
