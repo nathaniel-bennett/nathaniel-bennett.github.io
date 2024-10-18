@@ -272,7 +272,7 @@ html {
   @extend %flex-1; /* <-- Keep footer on the bottom */
   -ms-flex: none; /* <-- Fix IE footer issue */
   padding: $spacing-unit * 2 0;
-  padding-top: 72px;
+  padding-top: 12px;
 }
 
 .page-heading {
@@ -498,7 +498,7 @@ html {
     }
 
     h2, h3, h4, h5, h6 {
-      margin: 60px 0 19px;
+      margin: 12px 0 9px;
     }
 
     p, hr {
