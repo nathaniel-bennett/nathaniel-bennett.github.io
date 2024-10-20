@@ -67,7 +67,11 @@ img {
   vertical-align: middle;
 }
 
-
+.photo-swipe + em {
+  display: block;
+  text-align: center;
+  margin: 0 auto;
+}
 
 /**
  * Figures
