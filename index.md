@@ -13,8 +13,7 @@ subheading: "Ph.D. Research Assistant | Protocol Hacker | Rust Developer"
 
 Hi, I'm Nathaniel Bennett!
 
-I'm a 3rd-year Ph.D. student working in the Florida Institute for Cybersecurity (FICS) at the University of Florida.
-I work with and am co-advised by [Patrick Traynor](https://www.cise.ufl.edu/~traynor/) and [Kevin Butler](https://www.cise.ufl.edu/~butler/).
+I'm a 3rd-year Ph.D. student working in the Florida Institute for Cybersecurity (FICS) at the University of Florida, where I am co-advised by [Patrick Traynor](https://www.cise.ufl.edu/~traynor/) and [Kevin Butler](https://www.cise.ufl.edu/~butler/).
 My research focuses on cellular systems security and network protocol fuzzing, along with the occasional foray into other areas of security and privacy.
 
 In terms of vulnerability discovery, my recent research has spanned temporary identifier linkability attacks, cellphone-exploitable input validation vulnerabilities, and TLS certificate validation failures in LTE/5G implementations. These efforts have led directly to the discovery and remediation of over 130 vulnerabilities across 7 open-source/commercial cellular cores. I've also assisted in a project that reliably detects malicious devices that collect cellphone identifiers in an area (i.e., IMSI-Catchers), even when such devices employ [sophisticated counter-detection measures](https://www.usenix.org/system/files/sec22-kotuliak.pdf).
